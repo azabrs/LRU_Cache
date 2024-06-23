@@ -17,7 +17,7 @@ type LRU_Cache struct{
 type NodeValue struct{
 	key interface{}
 	value interface{}
-	intCh chan struct{}
+	intCh chan struct{} //interrupt channel. It is used to interrupt the waiting of elements with ttl
 }
 func New(cap int) (LRU_Cache, error){
 	if cap <= 0{
@@ -37,10 +37,10 @@ func (c *LRU_Cache)Cap() int{
 func (c *LRU_Cache)Add(key, value interface{}){
 	c.m.Lock()
 	defer c.m.Unlock()
-	if node, ok := c.h[key]; ok{
+	if node, ok := c.h[key]; ok{ //Check whether an element with such key exists
 		
-		node := c.l.Remove(node)
-		close(node.(NodeValue).intCh)
+		nodeVal := c.l.Remove(node)
+		close(nodeVal.(NodeValue).intCh)
 	}
 	node := c.l.PushBack(NodeValue{
 		key: key,
@@ -48,10 +48,11 @@ func (c *LRU_Cache)Add(key, value interface{}){
 		intCh: make(chan struct{}),
 	})
 	c.h[key] = node
-	if c.l.Len() > c.Cap(){
-		firstNode := c.l.Front()
-		c.l.Remove(firstNode)
-		delete(c.h, firstNode.Value.(NodeValue).key)
+	if c.l.Len() > c.Cap(){//checking the cache for overflow
+		firstNode := c.l.Front() //push out the element that has not been used the longest
+		nodeVal := c.l.Remove(firstNode).(NodeValue)
+		close(nodeVal.intCh)
+		delete(c.h, nodeVal.key)
 	}
 }
 
@@ -71,7 +72,9 @@ func (c *LRU_Cache)Clear(){
 	c.m.Lock()
 	defer c.m.Unlock()
 	for k := range c.h {
+		close(c.h[k].Value.(NodeValue).intCh)
 		delete(c.h, k)
+		
 	}
 	c.l.Init()
 	
@@ -84,7 +87,8 @@ func (c *LRU_Cache)Remove(key interface{}) error{
 	if !ok{
 		return fmt.Errorf("element does not exist")
 	}
-	c.l.Remove(node)
+	nodeVal := c.l.Remove(node).(NodeValue)
+	close(nodeVal.intCh)
 	delete(c.h, key)
 	
 	return nil
@@ -93,7 +97,7 @@ func (c *LRU_Cache)Remove(key interface{}) error{
 func (c *LRU_Cache)AddWithTTL(key, value interface{}, ttl time.Duration){
 	c.m.Lock()
 	defer c.m.Unlock()
-	if node, ok := c.h[key]; ok{
+	if node, ok := c.h[key]; ok{ //Check whether an element with such key exists
 		node := c.l.Remove(node)
 		close(node.(NodeValue).intCh)
 	}
@@ -105,8 +109,9 @@ func (c *LRU_Cache)AddWithTTL(key, value interface{}, ttl time.Duration){
 	c.h[key] = node
 	if c.l.Len() > c.Cap(){
 		firstNode := c.l.Front()
-		c.l.Remove(firstNode)
-		delete(c.h, firstNode.Value.(NodeValue).key)
+		nodeVal := c.l.Remove(firstNode).(NodeValue)
+		close(nodeVal.intCh)
+		delete(c.h, nodeVal.key)
 	}
 	go func(ttl time.Duration, key interface{}){
 		
