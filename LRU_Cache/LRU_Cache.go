@@ -10,9 +10,13 @@ type LRU_Cache struct{
 	capacity int
 	l *list.List
 	h map[interface{}] *list.Element
-	m *sync.RWMutex
+	m sync.RWMutex
 }
 
+type Node struct{
+	key interface{}
+	value interface{}
+}
 func New(cap int) (LRU_Cache, error){
 	if cap <= 0{
 		return LRU_Cache{}, fmt.Errorf("capacity must be positive")
@@ -24,24 +28,29 @@ func New(cap int) (LRU_Cache, error){
 	}, nil
 }
 
-func (c LRU_Cache)Cap() int{
+func (c *LRU_Cache)Cap() int{
 	return c.capacity
 }
 
-func (c LRU_Cache)Add(key, value interface{}){
+func (c *LRU_Cache)Add(key, value interface{}){
 	c.m.Lock()
 	defer c.m.Unlock()
-	if node, ok := c.h[key]; !ok{
+	if node, ok := c.h[key]; ok{
 		c.l.Remove(node)
 	}
-	node := c.l.PushBack(value)
+	node := c.l.PushBack(Node{
+		key: key,
+		value: value,
+	})
 	c.h[key] = node
 	if c.l.Len() > c.Cap(){
-		c.l.Remove(c.l.Front())
+		firstNode := c.l.Front()
+		c.l.Remove(firstNode)
+		delete(c.h, firstNode.Value.(Node).key)
 	}
 }
 
-func (c LRU_Cache)Get(key interface{}) (value interface{}, ok bool){
+func (c *LRU_Cache)Get(key interface{}) (value interface{}, ok bool){
 	c.m.Lock()
 	defer c.m.Unlock()
 	node, ok := c.h[key]
@@ -50,10 +59,10 @@ func (c LRU_Cache)Get(key interface{}) (value interface{}, ok bool){
 	}
 	c.l.MoveToBack(node)
 	
-	return node.Value.(int), true
+	return node.Value.(Node).value, true
 }
 
-func (c LRU_Cache)Clear(){
+func (c *LRU_Cache)Clear(){
 	c.m.Lock()
 	defer c.m.Unlock()
 	for k := range c.h {
@@ -63,7 +72,7 @@ func (c LRU_Cache)Clear(){
 	
 }
 
-func (c LRU_Cache)Remove(key interface{}) error{
+func (c *LRU_Cache)Remove(key interface{}) error{
 	c.m.Lock()
 	defer c.m.Unlock()
 	node, ok := c.h[key]
