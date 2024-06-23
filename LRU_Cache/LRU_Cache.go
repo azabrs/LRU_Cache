@@ -11,11 +11,6 @@ type LRU_Cache struct{
 	h map[interface{}] *list.Element
 }
 
-type node struct{
-	key interface{}
-	value interface{}
-}
-
 func New(cap int) (LRU_Cache, error){
 	if cap <= 0{
 		return LRU_Cache{}, fmt.Errorf("capacity must be positive")
@@ -32,17 +27,22 @@ func (c LRU_Cache)Cap() int{
 }
 
 func (c LRU_Cache)Add(key, value interface{}){
-	if val, ok := c.h[key]; !ok{
-		c.l.Remove(val)
+	if node, ok := c.h[key]; !ok{
+		c.l.Remove(node)
 	}
-	node := c.l.PushBack(node{
-		key: key,
-		value: value,
-	})
+	node := c.l.PushBack(value)
 	c.h[key] = node
 	if c.l.Len() > c.Cap(){
 		c.l.Remove(c.l.Front())
 	}
 }
 
-
+func (c LRU_Cache)Get(key interface{}) (value interface{}, ok bool){
+	node, ok := c.h[key]
+	if !ok{
+		return nil, false
+	}
+	c.l.MoveToBack(node)
+	
+	return node.Value.(int), true
+}
