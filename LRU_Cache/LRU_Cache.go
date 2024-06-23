@@ -46,3 +46,20 @@ func (c LRU_Cache)Get(key interface{}) (value interface{}, ok bool){
 	
 	return node.Value.(int), true
 }
+
+func (c LRU_Cache)Clear(){
+	for k := range c.h {
+		delete(c.h, k)
+	}
+	c.l.Init()
+}
+
+func (c LRU_Cache)Remove(key interface{}) error{
+	node, ok := c.h[key]
+	if !ok{
+		return fmt.Errorf("element does not exist")
+	}
+	c.l.Remove(node)
+	delete(c.h, key)
+	return nil
+}
