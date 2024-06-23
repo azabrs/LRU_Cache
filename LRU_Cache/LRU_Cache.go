@@ -50,9 +50,9 @@ func (c *LRU_Cache)Add(key, value interface{}){
 	c.h[key] = node
 	if c.l.Len() > c.Cap(){//checking the cache for overflow
 		firstNode := c.l.Front() //push out the element that has not been used the longest
-		nodeVal := c.l.Remove(firstNode).(NodeValue)
-		close(nodeVal.intCh)
-		delete(c.h, nodeVal.key)
+		nodeVal := c.l.Remove(firstNode)
+		close(nodeVal.(NodeValue).intCh)
+		delete(c.h, nodeVal.(NodeValue).key)
 	}
 }
 
@@ -63,7 +63,7 @@ func (c *LRU_Cache)Get(key interface{}) (value interface{}, ok bool){
 	if !ok{
 		return nil, false
 	}
-	c.l.MoveToBack(node)
+	c.l.MoveToBack(node) //Moving the item to the end of the doubly linked list
 	
 	return node.Value.(NodeValue).value, true
 }
@@ -87,8 +87,8 @@ func (c *LRU_Cache)Remove(key interface{}) error{
 	if !ok{
 		return fmt.Errorf("element does not exist")
 	}
-	nodeVal := c.l.Remove(node).(NodeValue)
-	close(nodeVal.intCh)
+	nodeVal := c.l.Remove(node)
+	close(nodeVal.(NodeValue).intCh)
 	delete(c.h, key)
 	
 	return nil
@@ -109,9 +109,9 @@ func (c *LRU_Cache)AddWithTTL(key, value interface{}, ttl time.Duration){
 	c.h[key] = node
 	if c.l.Len() > c.Cap(){
 		firstNode := c.l.Front()
-		nodeVal := c.l.Remove(firstNode).(NodeValue)
-		close(nodeVal.intCh)
-		delete(c.h, nodeVal.key)
+		nodeVal := c.l.Remove(firstNode)
+		close(nodeVal.(NodeValue).intCh)
+		delete(c.h, nodeVal.(NodeValue).key)
 	}
 	go func(ttl time.Duration, key interface{}){
 		

@@ -13,8 +13,8 @@ func main(){
 		log.Println(err)
 	}
 	fmt.Println(cache.Cap())
-	cache.AddWithTTL(5, "first", time.Second * 3)
 	cache.Add(6, "second")
+	cache.AddWithTTL(5, "first", time.Second * 3)
 	cache.Add(3, "third")
 	cache.Add(2, "fourth")
 	fmt.Println(cache.Get(5))
