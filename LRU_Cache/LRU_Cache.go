@@ -7,6 +7,7 @@ import (
 	"time"
 )
 
+
 type LRU_Cache struct{
 	capacity int
 	l *list.List
@@ -80,18 +81,17 @@ func (c *LRU_Cache)Clear(){
 	
 }
 
-func (c *LRU_Cache)Remove(key interface{}) error{
+func (c *LRU_Cache)Remove(key interface{}){
 	c.m.Lock()
 	defer c.m.Unlock()
 	node, ok := c.h[key]
 	if !ok{
-		return fmt.Errorf("element does not exist")
+		return
 	}
 	nodeVal := c.l.Remove(node)
 	close(nodeVal.(NodeValue).intCh)
 	delete(c.h, key)
 	
-	return nil
 }
 
 func (c *LRU_Cache)AddWithTTL(key, value interface{}, ttl time.Duration){

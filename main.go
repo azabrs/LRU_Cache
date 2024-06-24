@@ -17,6 +17,7 @@ func main(){
 	cache.AddWithTTL(5, "first", time.Second * 3)
 	cache.Add(3, "third")
 	cache.Add(2, "fourth")
+	cache.Clear()
 	fmt.Println(cache.Get(5))
 	time.Sleep(time.Second * 4)
 	fmt.Println(cache.Get(5))

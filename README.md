@@ -24,7 +24,7 @@ func (c *LRU_Cache)Cap() int
   Данная функция полностью очищает кэш.
   ### Удаление элемента по ключу
   ```go
-  func (c *LRU_Cache)Remove(key  interface{}) error
+  func (c *LRU_Cache)Remove(key  interface{})
   ```
  
  ### Добавление элемента
